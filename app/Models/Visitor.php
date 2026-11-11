@@ -8,9 +8,18 @@ use Illuminate\Database\Eloquent\Model;
 class Visitor extends Model
 {
     use HasFactory;
-    protected $fillable = [
-        'name', 'address', 'position',
 
+    protected $fillable = [
+        'name',
+        'address',
+        'position',
+        'created_at',
     ];
 
+    protected function casts(): array
+    {
+        return [
+            'created_at' => 'datetime',
+        ];
+    }
 }
