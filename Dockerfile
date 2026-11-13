@@ -24,7 +24,6 @@ RUN apt-get update \
         intl \
         zip \
         opcache \
-    && a2enmod rewrite headers \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Composer
@@ -35,9 +34,19 @@ ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
 ENV PORT=10000
 
 RUN sed -ri \
-    's!/var/www/html!/var/www/html/public!g' \
+    's!<VirtualHost \*:80>!<VirtualHost *:10000>!; s!/var/www/html!/var/www/html/public!g' \
     /etc/apache2/sites-available/000-default.conf \
-    && sed -i 's/Listen 80/Listen 10000/' /etc/apache2/ports.conf
+    && sed -i 's/Listen 80/Listen 10000/' /etc/apache2/ports.conf \
+    && printf '%s\n' \
+        '<Directory /var/www/html/public>' \
+        '    Options FollowSymLinks' \
+        '    AllowOverride All' \
+        '    Require all granted' \
+        '    DirectoryIndex index.php' \
+        '</Directory>' \
+        > /etc/apache2/conf-available/laravel.conf \
+    && a2enmod rewrite headers \
+    && a2enconf laravel
 
 WORKDIR /var/www/html
 
@@ -51,20 +60,14 @@ RUN composer install \
     --no-interaction
 
 # Configure Laravel permissions
-RUN printf '%s\n' \
-    '<Directory /var/www/html/public>' \
-    'AllowOverride All' \
-    'Require all granted' \
-    '</Directory>' \
-    > /etc/apache2/conf-available/laravel.conf \
-    && a2enconf laravel \
-    && mkdir -p storage/framework/cache \
+RUN mkdir -p storage/framework/cache \
        storage/framework/sessions \
        storage/framework/views \
        storage/logs \
        bootstrap/cache \
     && chown -R www-data:www-data storage bootstrap/cache
 
+# Expose Render port
 EXPOSE 10000
 
 CMD ["apache2-foreground"]
