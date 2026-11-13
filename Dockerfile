@@ -8,6 +8,7 @@ RUN apt-get update \
         unzip \
         libzip-dev \
         libicu-dev \
+        libonig-dev \
         libpng-dev \
         libjpeg62-turbo-dev \
         libfreetype6-dev \
